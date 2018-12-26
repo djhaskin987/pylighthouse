@@ -59,6 +59,7 @@ With a JSON file that looks like this for example:
 
 
 ```python
+import json
 import pylighthouse
 
 with open('loadsnnodes.json', 'r', encoding='utf-8', errors='ignore') as j:
