@@ -6,56 +6,55 @@ With a JSON file that looks like this for example:
 
 ```json
 {
-    "rubric": {
-        "cpu": 1.0,
-        "mem": 0.5,
-        "disk": 0.025
+  "rubric": {
+    "cpu": 1,
+    "mem": 0.5,
+    "disk": 0.025
+  },
+  "nodes": [
+    {
+      "name": "cluster-member-1",
+      "resources": {
+        "cpu": 6,
+        "mem": 12,
+        "disk": 50
+      }
     },
-    "nodes: [
-      {
-        "name": "cluster-member-1",
-        "resources": {
-          "cpu": 6.0,
-          "mem": 12.0,
-          "disk": 50.0
-        }
-      },
-      {
-        "name": "cluster-member-2",
-        "resources": {
-          "cpu": 4.0,
-          "mem": 16.0,
-          "disk": 40.0
-        }
+    {
+      "name": "cluster-member-2",
+      "resources": {
+        "cpu": 4,
+        "mem": 16,
+        "disk": 40
       }
-      {
-        "name": "cluster-member-3",
-        "resources": {
-          "cpu": 0.7,
-          "mem": 1.3,
-          "disk": 17.0
-        }
+    },
+    {
+      "name": "cluster-member-3",
+      "resources": {
+        "cpu": 0.7,
+        "mem": 1.3,
+        "disk": 17
       }
-    ],
-    "loads": [
-      {
-        "name": "vm-1",
-        "requirements": {
-          "cpu": 0.2,
-          "mem": 0.1
-        }
-      },
-      {
-        "name": "vm-2",
-        "requirements": {
-          "cpu": 0.3,
-          "mem": 0.3,
-          "disk": 1.0
-        }
+    }
+  ],
+  "loads": [
+    {
+      "name": "vm-1",
+      "requirements": {
+        "cpu": 0.2,
+        "mem": 0.1
       }
-    ]
+    },
+    {
+      "name": "vm-2",
+      "requirements": {
+        "cpu": 0.3,
+        "mem": 0.3,
+        "disk": 1
+      }
+    }
+  ]
 }
-
 ```
 
 
