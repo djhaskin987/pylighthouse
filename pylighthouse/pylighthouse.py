@@ -3,21 +3,30 @@
 """Main module."""
 
 from sortedcontainers import SortedDict
+import math
 
 class Workload(object):
     def __init__(self, name, requirements,
-            tolerations=set(), aversion_groups=set()):
+            immunities=set(), aversion_groups=set()):
         self.name = name
         self.requirements = requirements
-        self.tolerations = tolerations
+        self.immunities = immunities
         self.aversion_groups = aversion_groups
 
-    @classmethod
+    def __eq__(self, other):
+        return type(self) == type(other) and \
+                self.__dict__ == other.__dict__
+
+    @staticmethod
+    def from_list(ds):
+        return [Workload.from_dict(d) for d in ds]
+
+    @staticmethod
     def from_dict(d):
-        if 'tolerations' in d:
-            tolerations = d['tolerations']
+        if 'immunities' in d:
+            immunities = d['immunities']
         else:
-            tolerations = set()
+            immunities = set()
 
         if 'aversion_groups' in d:
             aversion_groups = d['aversion_groups']
@@ -25,7 +34,7 @@ class Workload(object):
             aversion_groups = set()
             return Workload(d['name'],
                             d['requirements'],
-                            tolerations,
+                            immunities,
                             aversion_groups)
 
 class Node(object):
@@ -34,7 +43,15 @@ class Node(object):
         self.resources = resources
         self.assigned_workloads = assigned_workloads
 
-    @classmethod
+    def __eq__(self, other):
+        return type(self) == type(other) and \
+                self.__dict__ == other.__dict__
+
+    @staticmethod
+    def from_list(ns):
+        return [Node.from_dict(n) for n in ns]
+
+    @staticmethod
     def from_dict(d):
         if 'assigned_workloads' in d:
             return Node(d['name'], d['resources'], d['assigned_workloads'])
@@ -66,7 +83,7 @@ class Node(object):
         # first in the keys of resources that will be used
         for k in used_keys:
             v = self.resources[k] - load.requirements[k]
-            if k not in load.tolerations and \
+            if k not in load.immunities and \
                     v < 0:
                 return False
             used[k] = v
@@ -74,7 +91,7 @@ class Node(object):
         # and then check keys of resources that aren't being used
         check_keys = have_keys.difference(used_keys)
         for k in check_keys:
-            if k not in load.tolerations and \
+            if k not in load.immunities and \
                     self.resources[k] < 0:
                 return False
 
@@ -90,10 +107,15 @@ class Node(object):
         else:
             return self.attempt_attach(load)
 
+    def detach_all(self):
+        for l in self.assigned_workloads:
+            for k, v in l.requirements:
+                self.resources[k] = self.resources[k] + v
+
+    def add_ward(self, ward):
+        self.resources[ward] = -math.inf
+
 class Distributor(object):
-    @classmethod
-    def from_list(nodes):
-        pass
 
     def _attempt_placement(self, placer, load):
         pass
@@ -104,7 +126,7 @@ class Distributor(object):
                 lambda n,l: n.attempt_attach(l)
             ]
         for attempt in attempts:
-            n = self.distributor._attempt_placement(attempt, load)
+            n = self._attempt_placement(attempt, load)
             if not (n is None):
                 return n.name
         return None
@@ -119,7 +141,7 @@ class PrioritizedDistributor(Distributor):
     def __init__(self, nodes):
         self.nodes = nodes
 
-    @classmethod
+    @staticmethod
     def from_list(nodes):
         return PrioritizedDistributor(nodes)
 
@@ -135,7 +157,7 @@ class RoundRobinDistributor(Distributor):
         self.nodes = nodes
         self.next = 0
 
-    @classmethod
+    @staticmethod
     def from_list(nodes):
         return RoundRobinDistributor(nodes)
 
@@ -154,7 +176,7 @@ class Rubric(object):
     def __init__(self, rubric):
         self.rubric = rubric
         self.keys_rubric = set(self.rubric.keys())
-        self.size = len(keys_rubric)
+        self.size = len(self.keys_rubric)
 
     def score(self, parts):
         keys_parts = set(parts.keys())
@@ -187,9 +209,9 @@ class BinPackDistributor(Distributor):
             self.nodes[(score, n.name)] = n
             self.scores[n.name] = score
 
-    @classmethod
+    @staticmethod
     def from_list(rubric, nodes):
-        return BinPackDistributor(rubric, nodes)
+        return BinPackDistributor(Rubric(rubric), nodes)
 
     def _attempt_placement(self, placer, load):
         found_node = None
@@ -216,7 +238,7 @@ class BinPackDistributor(Distributor):
         annotated_loads = []
         for l in loads:
             load_score = self.rubric.score(l.requirements)
-            annotated_loads.append((load_score, load))
+            annotated_loads.append((load_score, l))
         annotated_loads = sorted(annotated_loads,
                 key=(lambda x: x[0]),
                 reverse=True)

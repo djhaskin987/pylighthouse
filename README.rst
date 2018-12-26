@@ -14,19 +14,23 @@ pylighthouse
         :alt: Documentation Status
 
 
-
-
 Helps workloads find safe harbor.
-
 
 * Free software: Apache Software License 2.0
 * Documentation: https://pylighthouse.readthedocs.io.
 
-
 Features
 --------
 
-* TODO
+* Scheduling-as-a-library, in pure python
+* Schedule workloads onto nodes
+* Flexible definition of requirements needed by workloads and resources offered
+  by nodes
+* Tag nodes simply by adding a zero-quantity resource
+* "Taints and Tolerations"-like behavior supported through the use of
+  Wards and Immunitites
+* Anti-affinity-group-like behavior supported through the use of
+  Aversion Groups
 
 Credits
 -------

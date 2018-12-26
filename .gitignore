@@ -1,3 +1,14 @@
+# Always ignore these mac/windows files
+Thumbs.db
+.DS_Store
+
+# Editor save files
+\#*
+.*#
+.#*
+.*.sw[a-z]
+*~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,5 +1,5 @@
 Welcome to pylighthouse's documentation!
-======================================
+========================================
 
 .. toctree::
    :maxdepth: 2
@@ -10,8 +10,10 @@ Welcome to pylighthouse's documentation!
    usage
    modules
    contributing
+   code-of-conduct
+   changelog
    authors
-   history
+
 
 Indices and tables
 ==================
