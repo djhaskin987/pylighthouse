@@ -8,18 +8,41 @@ class LighthouseException(Exception):
     pass
 
 class Workload(object):
-    def __init__(self, name, requirements, tolerations, aversion_groups):
+    def __init__(self, name, requirements,
+            tolerations=set(), aversion_groups=set()):
         self.name = name
         self.requirements = requirements
         self.tolerations = tolerations
         self.aversion_groups = aversion_groups
-        self.assignment
+
+    @classmethod
+    def from_dict(d):
+        if 'tolerations' in d:
+            tolerations = d['tolerations']
+        else:
+            tolerations = set()
+
+        if 'aversion_groups' in d:
+            aversion_groups = d['aversion_groups']
+        else:
+            aversion_groups = set()
+            return Workload(d['name'],
+                            d['requirements'],
+                            tolerations,
+                            aversion_groups)
 
 class Node(object):
     def __init__(self, name, resources, assigned_workloads={}):
         self.name = name
         self.resources = resources
         self.assigned_workloads = assigned_workloads
+
+    @classmethod
+    def from_dict(d):
+        if 'assigned_workloads' in d:
+            return Node(d['name'], d['resources'], d['assigned_workloads'])
+        else:
+            return Node(d['name'], d['resources'])
 
     def has_averse_loads(self, load):
         groups = load.aversion_groups
