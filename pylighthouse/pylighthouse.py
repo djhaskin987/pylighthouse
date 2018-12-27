@@ -5,6 +5,9 @@
 from sortedcontainers import SortedDict
 import math
 
+class LighthouseException(Exception):
+    pass
+
 class Workload(object):
     def __init__(self, name, requirements,
             immunities=set(), aversion_groups=set()):
@@ -23,19 +26,23 @@ class Workload(object):
 
     @staticmethod
     def from_dict(d):
-        if 'immunities' in d:
+        if 'immunities' in d and type(d['immunities']) == list:
+            immunities = set(d['immunities'])
+        elif 'immunities' in d and type(d['immunities']) == set:
             immunities = d['immunities']
         else:
             immunities = set()
 
-        if 'aversion_groups' in d:
+        if 'aversion_groups' in d and type(d['aversion_groups']) == list:
+            aversion_groups = set(d['aversion_groups'])
+        elif 'aversion_groups' in d and type(d['aversion_groups']) == set:
             aversion_groups = d['aversion_groups']
         else:
             aversion_groups = set()
-            return Workload(d['name'],
-                            d['requirements'],
-                            immunities,
-                            aversion_groups)
+        return Workload(d['name'],
+                        d['requirements'],
+                        immunities,
+                        aversion_groups)
 
 class Node(object):
     def __init__(self, name, resources, assigned_workloads={}):
@@ -171,6 +178,9 @@ class RoundRobinDistributor(Distributor):
                 self.next = (self.next + 1) % size
                 return self.nodes[index]
         return None
+
+class LighthouseRubricException(LighthouseException):
+    pass
 
 class Rubric(object):
     def __init__(self, rubric):

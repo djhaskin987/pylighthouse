@@ -180,51 +180,69 @@ tried first every time when loads are assigned to nodes.
 RoundRobin
 ++++++++++
 
-With a strategy of ``RoundRobin``, assignment of workloads is done in the order
+With a ``RoundRobinDistributor``, assignment of workloads is done in the order
 given in the list, but placement attempts for each successive load starts on
 the node just after the successful placement of the previous load -- in a
 "round robin" fashion.
 
-.. highlight: json
-
-This is the result if the above were run with ``<strategy>`` as
+This is the result if the above were run with ``RoundRobinDistributor``::
 ``RoundRobin``::
 
-    {"successful":true,"assignments":{"req-1":"node-1","req-3":"node-3","req-2":"node-2"}}
+    distor = lighthouse.RoundRobinDistributor.from_list(nodes)
+    distor.attempt_assign_loads(workloads)
+    # =>
+    #{
+    #    "req-1": "node-1",
+    #    "req-3": "node-3",
+    #    "req-2": "node-2"
+    #}
 
-.. _BinPack:
+.. _BinPackDistributor:
 
 BinPack
 +++++++
 
-This strategy requires additional information in the JSON blob that is given
-to ``/assign-workloads``. A ``rubric`` must be specified. In discussing the
-example above, we will assume in our discussion that the following was also
-sent to the RPC endpoint::
+This strategy requires additional information. A *rubric* must be specified.
+In discussing the example above, we will assume in our discussion that the
+following code is also part of the script we are building::
 
-    "strategy": "BinPack",
-    "rubric": {
-            "cpu": 1,
-            "mem": 0.5,
-            "disk": 0.025
-          }
-    ...
+    rubric_dict = {
+        "cpu": 1,
+        "mem": 0.5,
+        "disk": 0.025
+    }
 
-BinPack attempts to pack in as many requirements into as few nodes as possible.
-In order to do so, the caller must specify a ``rubric``. This specifies that
-certain attributes need to be present in all nodes as resources and all
-workloads as requirements, and gives quantities that will be used to score
-each workload and node by multiplying each quantity for a given node or
-workload and summing the results. This score is computed for each node and
-workload and semantically corresponds to the node or load's "size". If any node
-or workload doesn't have all the attributes in the rubric, the call to
-``/assign-workloads`` will not be successful. In future versions of
-``/assign-workloads``, specifying negative values in the rubric will not be
-allowed and in the current version if this happens the result is undefined.
+``BinPackDistributor`` attempts to pack in as many requirements into as few
+nodes as possible.  In order to do so, the caller must specify a rubric.
+This gives quantities that will be used to score each workload and node by
+multiplying each quantity for a given node or workload and summing the results.
+If a quantity isn't in the rubric but is in a node's resources or a load's
+requirements, the quantity won't count towards the score.
+if a quantity is in the rubric but isn't in a node's resources or a load's
+requirements, the score will be computed as if the quantity was ``0``.
 
-If ``BinPack`` was used in the above example, the result would look like this::
+The score of any given node or workload semantically corresponds to the node
+or load's "size". Therefore, as long as the quantities in nodes and loads that
+are scored via the rubric are positive, it is recommended to always specify
+positive quantities in the rubric as well.
 
-{"successful":true,"assignments":{"req-1":"node-2","req-3":"node-1","req-2":"node-3"}}
+.. caution:: Specifying negative quantities in the rubric is possible, but
+    should be rare, and should be intended only to multiply against a
+    requirement or resource which will also *always* be negative, such as those
+    discussed below under `Wards and Immunities`_. If this rule is not
+    followed, ``BinPackDistributor`` may misbehave.
+
+If ``BinPackDistributor`` was used in the above example, the result would look
+like this::
+
+    distor = lighthouse.RoundRobinDistributor.from_list(rubric_dict, nodes)
+    distor.attempt_assign_loads(workloads)
+    # =>
+    #{
+    #    "req-1":"node-2",
+    #    "req-3":"node-1",
+    #    "req-2":"node-3"
+    #}
 
 In this example, all workloads were assigned to ``node-3``, since ``node-3``
 had the least room in it going into scheduling, since it had the least disk
@@ -249,36 +267,36 @@ Sometimes it is desirable to mark a particular node as specifically dedicated
 to a particular type of workload. When this is desired, it is simply a matter
 of adding a resource to a node with zero as the quantity::
 
-    ...
-    "nodes": [
+    nodes = lighthouse.Nodes.from_list([
         {
-            "id: "node1",
+            "name": "node1",
             "resources": {
                "dedicated": 0.0,
-               ...
+               #...
             }
         }
-    ]
+    ])
 
 Then, simply place a similar attribute in the requirements dictionary
 of the workloads that should be run on the dedicated nodes::
 
-    ...
-    "workloads": [
+    workloads = lighthouse.Workloads.from_list([
         {
             "name": "workload1",
             "requirements": {
                 "dedicated": 0.0,
-                ...
+                #...
             }
         }
-    ]
+    ])
 
 This works because all requirements listed for a workload must be present
 on the node and none may be allowed to be below zero, but zero is okay.
 
-Deficits and Tolerations
-++++++++++++++++++++++++
+.. _Wards and Immunities:
+
+Wards and Immunities
+++++++++++++++++++++
 
 This concept is similar to Kubernetes' `Taints and Tolerations`_ idea, but also
 has nuances to it that make it more flexible.
@@ -286,79 +304,81 @@ has nuances to it that make it more flexible.
 The idea is to mark a particular set of nodes as unavailable for workloads
 unless those workloads specifically opt into being run on those nodes.
 
-We do this in pylighthouse using Defecits and Tolerations.
+We do this in pylighthouse using Wards and Immunities.
 
-It is perfectly fine to list negative values for resources at call time on a
-node; however, as has been previously explained, if there are any resources in
-a node with negative quantity at *assignment time* of a workload, the workload
-is not able to be attached.
+It is perfectly valid to list negative values for resources at *node
+construction time*; however, as has been previously explained, if there are any
+resources in a node with negative quantity at *assignment time of a workload*,
+the workload will not be able to be attached to the node.
+
+A negative resource with a finite quantity is called a
+*shortcoming*, while a negative resource of infinite or very large quantity
+may be termed a *ward*.
 
 Negative resources can be overcome by a resource in one of two ways.
 
-First, for negative resource of *finite* this can be overcome by simply listing
-a negative requirement. That way, when one is subtracted from the other, the
-result will be zero::
+First, for negative resources of *finite* quantity, this can be overcome by
+simply listing a negative requirement. That way, when one is subtracted from
+the other, the result will be zero::
 
-    ...
-    "nodes": [
+    nodes = lighthouse.Node.from_list([
         {
             "id: "node1",
             "resources": {
                "flies": -5.0,
-               ...
+               #...
             }
         }
-    ],
-    "workloads": [
+    ])
+    workloads = lighthouse.Workload.from_list([
         {
             "name": "workload1",
             "requirements": {
                 "flies": -5.0,
-                ...
+                #...
             }
         }
-    ]
+    ])
 
 This may be used to list "shortcomings" of a node that precludes it from having
 workloads scheduled on it unless at least one workload has a sufficient
 tolerance to the shortcoming.
 
-Second, we list a node up front at call time with a resource that has infinite
-negative value::
+Second, we list a node up front at construction time with a ward::
 
-    ...
-    "nodes": [
+    import math
+
+    nodes = lighthouse.Node.from_list([
         {
-            "id: "node1",
+            "name": "node1",
             "resources": {
-               "spiders": -inf,
-               ...
+               "spiders": -math.inf,
+               #...
             }
         }
     ]
 
-In this scenario, workloads will not be able to overcome the shortcoming no
-matter how finitely resilient the workload is. However, we can list a
-``toleration`` on the workload.
+In this scenario, workloads will not be able to overcome the ward no
+matter how finitely resilient the workload is. However, we can list an
+immunity on the workload.
 
-A ``toleration`` in a workload tells pylighthouse to ignore whatever value exists
+An *immunity* in a workload tells pylighthouse to ignore whatever value exists
 for a resource in a node at assignment time of the workload. So, in order to
 schedule a workload on the node listed above, we can simply add ``"spiders"``
-to the toleration list for the workload::
+to the set of immunities for the workload::
 
-    ...
-    "workloads": [
+    workloads = lighthouse.Workload.from_list([
         {
             "name": "workload1",
             "requirements": {
-                ...
+                #...
             },
-            "immunities": [
+            "immunities": set([
                 "spiders",
-                ...
-            ]
+                #...
+            ])
         }
-    ]
+    ])
 
 Aversion Groups
 ---------------
@@ -369,48 +389,47 @@ Put simply, any aversion group listed for a workload causes that workload
 to "prefer" to be scheduled on a node without any other workloads listed
 as "belonging" to the same aversion group, like this:::
 
-    ...
-    "nodes": [
+    # ...
+    nodes = lighthouse.Node.from_list([
         {
-            "id: "node1",
+            "name": "node1",
             "resources": {
-               ...
+               # ...
             }
         },
         {
-            "id: "node2",
+            "name": "node2",
             "resources": {
-               ...
+               # ...
             }
         }
 
-    ],
-    "workloads": [
+    ])
+    workloads = lighthouse.Workload.from_list([
         {
             "name": "workload1",
             "requirements": {
-                ...
+                # ...
             },
-            "aversion_groups": [
+            "aversion_groups": set([
                 "io-bound",
-                ...
-            ]
+                # ...
+            ])
         },
         {
             "name": "workload2",
             "requirements": {
-                ...
+                # ...
             },
-            "aversion_groups": [
+            "aversion_groups": set([
                 "io-bound",
-                ...
-            ]
+                # ...
+            ])
         }
-    ]
+    ])
 
 In the above example, both ``workload1`` and ``workload2`` will try really hard
 to be scheduled on different nodes, becuase they both list the ``io-bound``
 aversion group in their aversion groups list.
 
 .. _Taints and Tolerations: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-
