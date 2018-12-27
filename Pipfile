@@ -12,6 +12,7 @@ sphinx = "*"
 sphinx-rtd-theme = "*"
 flake8 = "*"
 tox = "*"
+bumpversion = "*"
 
 [requires]
 python_version = "3.6"

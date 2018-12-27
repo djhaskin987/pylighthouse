@@ -1,5 +1,7 @@
 .. highlight:: shell
 
+.. _Contributing:
+
 ============
 Contributing
 ============
@@ -115,9 +117,6 @@ Pull Request Guidelines
 When you go to make the PR, please use the following checklist to test
 whether or not it is likely to be accepted:
 
-1. **Is it based on the ``develop`` branch?** pylighthouse uses the
-   `git-flow`_ framework for branch management. Please make PRs to the
-   ``develop`` branch.
 2. **Do you have tests in your PR, and do they pass?** Tests are in
    two places in pylighthouse: the ``tests/`` directory, where more
    or less normal unit tests reside. You must have at least a few
@@ -148,17 +147,17 @@ Tips
 
 To run a subset of tests::
 
-$ py.test tests.test_pylighthouse
+    $ py.test tests.test_pylighthouse
 
 Deploying
 ---------
 
 A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run::
+Then run this from the pipenv shell (run ``pipenv shell`` first)::
 
-$ bumpversion patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+    $ bumpversion patch # possible: major / minor / patch
+    $ git push
+    $ git push --tags
 
 Travis will then deploy to PyPI if tests pass.
