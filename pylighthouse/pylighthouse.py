@@ -25,6 +25,9 @@ class Workload(object):
     def __str__(self):
         return str(self.__dict__)
 
+    def __repr__(self):
+        return str(self.__dict__)
+
     @staticmethod
     def from_list(ds):
         return [Workload.from_dict(d) for d in ds]
@@ -51,16 +54,22 @@ class Workload(object):
 
 
 class Node(object):
-    def __init__(self, name, resources, assigned_workloads={}):
+    def __init__(self, name, resources, assigned_workloads=None):
         self.name = name
         self.resources = resources
-        self.assigned_workloads = assigned_workloads
+        if assigned_workloads:
+            self.assigned_workloads = assigned_workloads
+        else:
+            self.assigned_workloads = dict()
 
     def __eq__(self, other):
         return type(self) == type(other) and \
                 self.__dict__ == other.__dict__
 
     def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
         return str(self.__dict__)
 
     @staticmethod
@@ -124,9 +133,10 @@ class Node(object):
             return self.attempt_attach(load)
 
     def detach_all(self):
-        for l in self.assigned_workloads:
-            for k, v in l.requirements:
+        for wname, w in self.assigned_workloads.items():
+            for k, v in w.requirements.items():
                 self.resources[k] = self.resources[k] + v
+        self.assigned_workloads = dict()
 
     def add_ward(self, ward):
         self.resources[ward] = -math.inf

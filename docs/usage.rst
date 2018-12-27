@@ -18,7 +18,7 @@ You can schedule workloads onto nodes like this::
     import pylighthouse.pylighthouse as lighthouse
 
     distor = lighthouse.PrioritizedDistributor.from_list(
-        nodes=[{
+        nodes=lighthouse.Node.from_list([{
             "name": "cluster-member-1",
             "resources": {
                 "cpu": 6,
@@ -42,7 +42,7 @@ You can schedule workloads onto nodes like this::
               "disk": 17
           }
         }
-    ])
+    ]))
     distor.attempt_assign_loads(lighthouse.Workload.from_list([
         {
             "name": "vm-1",
@@ -58,14 +58,12 @@ You can schedule workloads onto nodes like this::
                 "mem": 0.3,
                 "disk": 1
             }
-        }
-    ])
-
-    # =>
-    #{
-    #   "vm-1": "cluster-member-1",
-    #   "vm-2": "cluster-member-1"
-    #}
+        }]))
+       # =>
+       #{
+       #    "vm-1": "cluster-member-1",
+       #    "vm-2": "cluster-member-1"
+       #}
 
 As you can see, ``attempt_assign_loads`` takes a list of workloads and
 attempts to assign workloads to the nodes given to the distributor at
@@ -101,8 +99,7 @@ placement strategies below::
 
     import pylighthouse.pylighthouse as lighthouse
 
-    distor = lighthouse.PrioritizedDistributor.from_list(
-    nodes = lighthouse.Node.from_list([
+    nodes=lighthouse.Node.from_list([
         {
           "name": "node-1",
           "resources": {
@@ -127,33 +124,33 @@ placement strategies below::
             "disk": 40
           }
         }
-      ])
-      workloads = lighthouse.Workload.from_list([
+    ])
+    workloads = lighthouse.Workload.from_list([
         {
           "name": "req-1",
           "requirements": {
-            "cpu": 1,
-            "mem": 2,
-            "disk": 10
+            "cpu": 8,
+            "mem": 8,
+            "disk": 80
           }
         },
         {
           "name": "req-2",
           "requirements": {
-            "cpu": 3,
-            "mem": 2,
-            "disk": 5
+            "cpu": 8,
+            "mem": 8,
+            "disk": 80
           }
         },
         {
           "name": "req-3",
           "requirements": {
-            "cpu": 2,
-            "mem": 4,
-            "disk": 50
+            "cpu": 8,
+            "mem": 8,
+            "disk": 60
           }
         }
-      ])
+    ])
 
 Prioritized
 +++++++++++
@@ -230,7 +227,8 @@ positive quantities in the rubric as well.
     should be rare, and should be intended only to multiply against a
     requirement or resource which will also *always* be negative, such as those
     discussed below under `Wards and Immunities`_. If this rule is not
-    followed, ``BinPackDistributor`` may misbehave.
+    followed, ``BinPackDistributor`` may misbehave. As a rule,
+    if the value is expected to be negative, don't include it in the rubric.
 
 If ``BinPackDistributor`` was used in the above example, the result would look
 like this::
@@ -239,9 +237,9 @@ like this::
     distor.attempt_assign_loads(workloads)
     # =>
     #{
-    #    "req-1":"node-2",
-    #    "req-3":"node-1",
-    #    "req-2":"node-3"
+    #    "req-1": "node-3",
+    #    "req-3": "node-3",
+    #    "req-2": "node-3"
     #}
 
 In this example, all workloads were assigned to ``node-3``, since ``node-3``
