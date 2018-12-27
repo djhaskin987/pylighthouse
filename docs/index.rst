@@ -27,7 +27,6 @@ Fork pylighthouse on Github:
    authors
    license
 
-
 Indices and tables
 ==================
 * :ref:`genindex`

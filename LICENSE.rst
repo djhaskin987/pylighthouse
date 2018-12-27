@@ -1,8 +1,11 @@
-===========================
-Apache Software License 2.0
-===========================
+=======
+License
+=======
 
-Copyright (c) 2018 the pylighthouse authors, see the :ref:`AUTHORS` file
+Apache Software License 2.0
+---------------------------
+
+Copyright (c) 2018 the pylighthouse authors, see the :ref:`AUTHORS <AUTHORS>` file
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
