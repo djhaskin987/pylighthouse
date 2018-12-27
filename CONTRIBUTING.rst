@@ -129,8 +129,7 @@ whether or not it is likely to be accepted:
    if 1) it significantly changes the content of any previously merged unit or
    script test and 2) if it breaks any of them.
 4. **Did you add documentation around the feature in your PR?**
-   Generally this at least means adding something to the :ref:`modules`
-   document, and hopefully something to the `usage <usage>`
+   Generally this means adding something to the `usage <usage>`
    document.
 5. **Did you add an entry to the Changelog?** This project keeps a
    curated :ref:`changelog <pylighthouse Changelog>`.
@@ -139,8 +138,6 @@ There are some exceptions to the above rules. If your patch is less than
 two lines' difference from the previous version, your PR may be a "typo" PR,
 which may qualify to get around some of the above rules. Just ask the team
 on your GitHub issue.
-
-.. _git-flow: http://nvie.com/posts/a-successful-git-branching-model/
 
 Tips
 ----
