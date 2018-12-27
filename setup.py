@@ -3,12 +3,17 @@
 
 """The setup script."""
 
+import os
+import os.path
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open(os.path.join(dir_path, 'README.rst')) as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open(os.path.join(dir_path, 'CHANGELOG.rst')) as history_file:
     history = history_file.read()
 
 requirements = [ ]

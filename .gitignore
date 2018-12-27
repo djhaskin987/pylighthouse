@@ -9,6 +9,11 @@ Thumbs.db
 .*.sw[a-z]
 *~
 
+# Typical dirs for virutalenv
+/venv/
+/ve/
+/pylighthouse-env/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
