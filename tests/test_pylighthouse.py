@@ -413,3 +413,184 @@ def test_shortcoming_failure():
         }
     })
     assert_bad(nd, wk)
+
+def assert_uniform_assignment(nodes, loads, outcome, rdict=None):
+    if not rdict:
+        rdict = make_rdict(nodes[0])
+
+    pr = lighthouse.PrioritizedDistributor.from_list(nodes)
+    assert pr.attempt_assign_loads(loads) == outcome
+    for n in nodes:
+        n.detach_all()
+    rr = lighthouse.RoundRobinDistributor.from_list(list(nodes))
+    assert pr.attempt_assign_loads(loads) == outcome
+    for n in nodes:
+        n.detach_all()
+    bp = lighthouse.BinPackDistributor.from_list(rdict, list(nodes))
+    assert bp.attempt_assign_loads(loads) == outcome
+
+def test_tagging():
+    '''
+    Tags are zero-quantity requirements
+    '''
+    nodes = lighthouse.Node.from_list([
+        {
+            "name": "phillip",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25
+            }
+        },
+        {
+            "name": "charming",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25,
+                "nice-castle": 0,
+            }
+        }
+    ])
+    workloads = lighthouse.Workload.from_list([
+        {
+            "name": "snow-white",
+            "requirements": {
+                "nice-castle": 0,
+            }
+        }])
+    assert_uniform_assignment(nodes, workloads,
+            {
+                "snow-white": "charming"
+            })
+    no_room = lighthouse.Node.from_list([
+        {
+            "name": "phillip",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25
+            }
+        },
+        {
+            "name": "charming",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25
+            }
+        }
+    ])
+    assert_uniform_assignment(no_room, workloads,
+            {
+                "snow-white": None
+            })
+
+def test_semaphore_basic():
+    '''
+    Semaphores are like aversions, but are more enforced
+    '''
+
+    nodes = lighthouse.Node.from_list([
+        {
+            "name": "prince",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25,
+                "nice-castle": 0,
+                "wife": 1
+            }
+        }
+    ])
+    workloads = lighthouse.Workload.from_list([
+        {
+            "name": "aurora",
+            "requirements": {
+                "bravery": 12,
+                "nice-castle": 0,
+                "wife": 1,
+            }
+        },
+        {
+            "name": "buttercup",
+            "requirements": {
+                "bravery": 12,
+                "nice-castle": 0,
+                "wife": 1,
+            }
+        },
+        {
+            "name": "cinderella",
+            "requirements": {
+                "bravery": 12,
+                "nice-castle": 0,
+                "wife": 1,
+            }
+        }
+            ])
+    # This is not only testing semaphore,
+    # but something else:
+    # The sort for binpack goes by score, then name
+    assert_uniform_assignment(nodes, workloads, {
+        "aurora": "prince",
+        "buttercup": None,
+        "cinderella": None
+        })
+
+def test_aversion_group():
+    nodes = lighthouse.Node.from_list([
+        {
+            "name": "house-1",
+            "resources": {
+                "bathroom": 25,
+                "bedroom": 10,
+                "kitchen": 10
+            }
+        },
+        {
+            "name": "house-2",
+            "resources": {
+                "bathroom": 25,
+                "bedroom": 10,
+                "kitchen": 15
+            }
+        }
+    ])
+    workloads = lighthouse.Workload.from_list([
+        {
+            "name": "college-student-1",
+            "requirements": {
+                "bathroom": 5,
+                "bedroom": 2,
+                "kitchen": 2
+                },
+            "aversion_groups": [
+                "north_south_rivalry"
+            ]
+        },
+        {
+            "name": "college-student-2",
+            "requirements": {
+                "bathroom": 5,
+                "bedroom": 2,
+                "kitchen": 2
+                },
+            "aversion_groups": [
+                "north_south_rivalry"
+            ]
+        }
+        ])
+    assert_uniform_assignment(nodes, workloads, {
+        "college-student-1": "house-1",
+        "college-student-2": "house-2"
+        })
+    no_room = lighthouse.Node.from_list([
+        {
+            "name": "house-1",
+            "resources": {
+                "bathroom": 25,
+                "bedroom": 10,
+                "kitchen": 10
+            }
+        }
+    ])
+    assert_uniform_assignment(no_room, workloads, {
+        "college-student-1": "house-1",
+        "college-student-2": "house-1"
+        })

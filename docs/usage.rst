@@ -72,6 +72,10 @@ workloads and values being the names of the nodes to which those loads
 were assigned. If workload could not be assigned to a node, the value
 is ``None`` for that key instead.
 
+.. caution:: the ``name`` field for each workload and node must be unique
+             to that node or workload, or bad things will happen to innocent
+             people (you. At least, I *hope* you're innocent)
+
 Note that the requirements in a workload need not include all the types
 of resourjces found in nodes. In the above example, each node has
 ``mem``, ``cpu`` and ``disk`` attributes, but the requirements
