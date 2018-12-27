@@ -59,11 +59,11 @@ You can schedule workloads onto nodes like this::
                 "disk": 1
             }
         }]))
-       # =>
-       #{
-       #    "vm-1": "cluster-member-1",
-       #    "vm-2": "cluster-member-1"
-       #}
+   # =>
+   #{
+   #    "vm-1": "cluster-member-1",
+   #    "vm-2": "cluster-member-1"
+   #}
 
 As you can see, ``attempt_assign_loads`` takes a list of workloads and
 attempts to assign workloads to the nodes given to the distributor at
@@ -72,9 +72,9 @@ workloads and values being the names of the nodes to which those loads
 were assigned. If workload could not be assigned to a node, the value
 is ``None`` for that key instead.
 
-.. caution:: the ``name`` field for each workload and node must be unique
+.. caution:: The ``name`` field for each workload and node must be unique
              to that node or workload, or bad things will happen to innocent
-             people (you. At least, I *hope* you're innocent)
+             people (you. At least, I *hope* you're innocent :P).
 
 Node resources and Workload requirements are free-form and can be arbitrary.
 
@@ -116,6 +116,7 @@ previously given. So after this code::
     #{
     #    "kid-a": "parent"
     #}
+
 Running this code afterwards::
 
     result2 = pr.attempt_assign_loads([b])
@@ -664,6 +665,10 @@ cross-school rivalry. We may model this scenario like this::
             ]
         }
     ])
+
+.. note:: The above example shows that ``aversion_groups`` can be specified as
+    a list or set when calling ``Workload.from_list``, but they are internally
+    represented as sets.
 
 Although there is plenty of room for both college students to live
 in the same house, any distributor attempting to assign these workloads to the
