@@ -25,6 +25,7 @@ Fork pylighthouse on Github:
    code-of-conduct
    changelog
    authors
+   license
 
 
 Indices and tables
