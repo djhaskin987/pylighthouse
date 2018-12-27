@@ -7,6 +7,16 @@ Contributing
 Contributions are welcome, and they are greatly appreciated! Every little bit
 helps, and credit will always be given.
 
+First, please read the pylighthouse :ref:`Code of Conduct`. This project
+will not take any contribution coming from those who do not abide by
+the code of conduct. This means that while a person is currently under
+disciplinary action via avenues set forth in that document, this project will
+ignore and not incorporate any contributions they might give at that time,
+including pull requests, bug reports, feature requests, or any other
+contribution. We here at pylighthouse are committed to caring about
+the well-being of every one in our community, and we are prepared to act to
+protect that well-being if needed.
+
 You can contribute in many ways:
 
 Types of Contributions
@@ -64,11 +74,12 @@ Ready to contribute? Here's how to set up `pylighthouse` for local development.
 
     $ git clone git@github.com:your_name_here/pylighthouse.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv. Assuming you have
+   pipenv installed, this is how you set up your fork for local
+   development::
 
-    $ mkvirtualenv pylighthouse
     $ cd pylighthouse/
-    $ python setup.py develop
+    $ pipenv install --dev
 
 4. Create a branch for local development::
 
@@ -79,11 +90,16 @@ Ready to contribute? Here's how to set up `pylighthouse` for local development.
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
 
+    $ pipenv shell
     $ flake8 pylighthouse tests
     $ python setup.py test or py.test
     $ tox
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+   flake8 and tox should be installed if you are in the pipenv shell. If not,
+   just pip install them into your virtualenv like this::
+
+    $ pipenv install --dev flake8
+    $ pipenv install --dev tox
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -96,15 +112,36 @@ Ready to contribute? Here's how to set up `pylighthouse` for local development.
 Pull Request Guidelines
 -----------------------
 
-Before you submit a pull request, check that it meets these guidelines:
+When you go to make the PR, please use the following checklist to test
+whether or not it is likely to be accepted:
 
-1. The pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put
-   your new functionality into a function with a docstring, and add the
-   feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.4, 3.5 and 3.6, and for PyPy. Check
-   https://travis-ci.org/djhaskin987/pylighthouse/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+1. **Is it based on the ``develop`` branch?** pylighthouse uses the
+   `git-flow`_ framework for branch management. Please make PRs to the
+   ``develop`` branch.
+2. **Do you have tests in your PR, and do they pass?** Tests are in
+   two places in pylighthouse: the ``tests/`` directory, where more
+   or less normal unit tests reside. You must have at least a few
+   simple unit tests as a "spot-check" of your feature if the PR is to be
+   merged. The tests need not be elaborate; simple tests are better than no
+   tests.
+3. **Is your PR backwards compatible?** The biggest feature pylighthouse
+   provides is backwards compatibility. If pylighthouse breaks a build, it
+   is a bug. A PR is herein defined to be "backwards incompatible"
+   if 1) it significantly changes the content of any previously merged unit or
+   script test and 2) if it breaks any of them.
+4. **Did you add documentation around the feature in your PR?**
+   Generally this at least means adding something to the :ref:`modules`
+   document, and hopefully something to the `usage <usage>`
+   document.
+5. **Did you add an entry to the Changelog?** This project keeps a
+   curated :ref:`changelog <pylighthouse Changelog>`.
+
+There are some exceptions to the above rules. If your patch is less than
+two lines' difference from the previous version, your PR may be a "typo" PR,
+which may qualify to get around some of the above rules. Just ask the team
+on your GitHub issue.
+
+.. _git-flow: http://nvie.com/posts/a-successful-git-branching-model/
 
 Tips
 ----
@@ -112,7 +149,6 @@ Tips
 To run a subset of tests::
 
 $ py.test tests.test_pylighthouse
-
 
 Deploying
 ---------
