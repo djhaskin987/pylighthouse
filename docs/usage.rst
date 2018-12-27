@@ -76,8 +76,10 @@ is ``None`` for that key instead.
              to that node or workload, or bad things will happen to innocent
              people (you. At least, I *hope* you're innocent)
 
+Node resources and Workload requirements are free-form and can be arbitrary.
+
 Note that the requirements in a workload need not include all the types
-of resourjces found in nodes. In the above example, each node has
+of resources found in nodes. In the above example, each node has
 ``mem``, ``cpu`` and ``disk`` attributes, but the requirements
 need not list all of these as requirements.
 
@@ -86,6 +88,46 @@ room exists for all workloads, this does not mean that pylighthouse will be
 able to figure this out. You can help pylighthouse get better at packing nodes
 tightly using the `BinPackDistributor`_ discussed below, and you can also
 increase the capacity of the nodes.
+
+Distributors and the nodes they contain are stateful. They remember workloads
+previously given. So after this code::
+
+    parent = lighthouse.Node.from_list([
+        "name": "parent",
+        "resources": {
+            "patience": 1
+        }
+    ])
+    a = lighthouse.Workload.from_dict({
+        "name": "kid-a",
+        "requirements": {
+            "patience": 1
+        }
+    })
+    b = lighthouse.Workload.from_dict({
+        "name": "kid-b",
+        "requirements": {
+            "patience": 1
+        }
+    })
+    pr = lighthouse.PrioritizedDistributor.from_list([parent])
+    result1 = pr.attempt_assign_loads([a])
+    # =>
+    #{
+    #    "kid-a": "parent"
+    #}
+Running this code afterwards::
+
+    result2 = pr.attempt_assign_loads([b])
+
+Would result in this assignment::
+
+    {
+        "kid-b": None
+    }
+
+This reflects that there is no current room for the second workload, as the
+first has consumed all resources.
 
 Placement Strategies
 --------------------
@@ -250,6 +292,12 @@ In this example, all workloads were assigned to ``node-3``, since ``node-3``
 had the least room in it going into scheduling, since it had the least disk
 space.
 
+``BinPackDistributor`` first attempts to place workloads by score, but if two
+workloads share the same score, BinPackDistributor will try to place the
+workload in sorted order ascending by name of the nodes. So a node named
+"a" will be tried before a node named "b" if both nodes share the same
+score.
+
 Placement Enforcement
 ---------------------
 
@@ -268,6 +316,8 @@ Node Tagging
 Sometimes it is desirable to mark a particular node as specifically dedicated
 to a particular type of workload. When this is desired, it is simply a matter
 of adding a resource to a node with zero as the quantity::
+
+
 
     nodes = lighthouse.Nodes.from_list([
         {
@@ -294,6 +344,140 @@ of the workloads that should be run on the dedicated nodes::
 
 This works because all requirements listed for a workload must be present
 on the node and none may be allowed to be below zero, but zero is okay.
+
+For example::
+
+    nodes = lighthouse.Node.from_list([
+        {
+            "name": "phillip",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25
+            }
+        },
+        {
+            "name": "charming",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25,
+                "nice-castle": 0,
+            }
+        }
+    ])
+    workloads = lighthouse.Workload.from_list([
+        {
+            "name": "snow-white",
+            "requirements": {
+                "nice-castle": 0,
+            }
+        }])
+
+Any distributor attempting to assign these workloads to the nodes
+via ``attempt_assign_loads`` will yield the following assignment::
+
+    {
+        "snow-white": "charming"
+    }
+
+This is because prince ``charming`` has the ``nice-castle`` "tag", while
+``phillip`` does not.
+
+Tags also ensure that no assignment will be made if tags are not present::
+
+    no_room = lighthouse.Node.from_list([
+        {
+            "name": "phillip",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25
+            }
+        },
+        {
+            "name": "charming",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25
+            }
+        }
+    ])
+
+Any distributor attempting to assign these workloads to the nodes
+via ``attempt_assign_loads`` will yield the following assignment::
+
+    {
+        "snow-white": None
+    }
+
+This is because none of the princes (nodes) had a ``nice-castle`` "tag"
+present in their resources.
+
+Semaphores
+++++++++++
+
+Often it is convenient to limit how many of a particular type of workload
+is allowed to be placed on a node. This is done simply by listing a
+resource in a node's resource map and in relevant workload's requirements maps.
+The pattern is to list the number of workloads a node can handle at the same
+time in the semaphore as the number for the resource in the node, and list
+``1`` as the quantity for the requirement for each workload. For example::
+
+
+    nodes = lighthouse.Node.from_list([
+        {
+            "name": "prince",
+            "resources": {
+                "bravery": 25,
+                "kindness": 25,
+                "nice-castle": 0,
+                "wife": 1
+            }
+        }
+    ])
+    workloads = lighthouse.Workload.from_list([
+        {
+            "name": "aurora",
+            "requirements": {
+                "bravery": 12,
+                "nice-castle": 0,
+                "wife": 1,
+            }
+        },
+        {
+            "name": "buttercup",
+            "requirements": {
+                "bravery": 12,
+                "nice-castle": 0,
+                "wife": 1,
+            }
+        },
+        {
+            "name": "cinderella",
+            "requirements": {
+                "bravery": 12,
+                "nice-castle": 0,
+                "wife": 1,
+            }
+        }
+    ])
+
+In this example, the node is a potential suitor for a number of fairy tale
+princesses. The prince can only have a single wife, and so ``wife`` is listed
+as a resource with quantity ``1``. This is the semaphore. Any distributor
+based off of those nodes will yield the same results as assignments if
+``attempt_assign_loads`` is called::
+
+    {
+        "aurora": "prince",
+        "buttercup": None,
+        "cinderella": None
+    }
+
+The ``PrioritizedDistributor`` and ``RoundRobinDistributor`` will both
+schedule the first given princess in the list, ``aurora``, but will
+not be able to schedule the remaining princesses. ``BinPackDistributor``
+will likewise schedule ``aurora`` first because the scores of the workloads
+based on any reasonable (non-negative) rubric will show that they have the same
+sizes of requirements, and ``aurora`` sorts before the other names.
 
 .. _Wards and Immunities:
 
@@ -380,6 +564,8 @@ to the set of immunities for the workload::
         }
     ])
 
+.. _Taints and Tolerations: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
 Aversion Groups
 ---------------
 
@@ -432,4 +618,85 @@ In the above example, both ``workload1`` and ``workload2`` will try really hard
 to be scheduled on different nodes, becuase they both list the ``io-bound``
 aversion group in their aversion groups list.
 
-.. _Taints and Tolerations: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+In this example, we have two houses and two college students. Each
+student goes to a different local university and is part of the same
+cross-school rivalry. We may model this scenario like this::
+
+    nodes = lighthouse.Node.from_list([
+        {
+            "name": "house-1",
+            "resources": {
+                "bathroom": 25,
+                "bedroom": 10,
+                "kitchen": 10
+            }
+        },
+        {
+            "name": "house-2",
+            "resources": {
+                "bathroom": 25,
+                "bedroom": 10,
+                "kitchen": 15
+            }
+        }
+    ])
+    workloads = lighthouse.Workload.from_list([
+        {
+            "name": "college-student-1",
+            "requirements": {
+                "bathroom": 5,
+                "bedroom": 2,
+                "kitchen": 2
+                },
+            "aversion_groups": [
+                "north_south_rivalry"
+            ]
+        },
+        {
+            "name": "college-student-2",
+            "requirements": {
+                "bathroom": 5,
+                "bedroom": 2,
+                "kitchen": 2
+                },
+            "aversion_groups": [
+                "north_south_rivalry"
+            ]
+        }
+    ])
+
+Although there is plenty of room for both college students to live
+in the same house, any distributor attempting to assign these workloads to the
+nodes via ``attempt_assign_loads`` will yield the following assignment::
+
+    {
+        "college-student-1": "house-1",
+        "college-student-2": "house-2"
+    }
+
+As can be seen, even though there is plenty of room for both students to be
+in the same house, they are put in different houses due to them being in the
+same rivalry (aversion group).
+
+However, if there is no other house in which they might live, the students
+will still reluctantly be scheduled together. Using this list of nodes instead
+of the one above::
+
+    nodes = lighthouse.Node.from_list([
+        {
+            "name": "house-1",
+            "resources": {
+                "bathroom": 25,
+                "bedroom": 10,
+                "kitchen": 10
+            }
+        }
+    ])
+
+The assignments would look like this instead::
+
+    {
+        "college-student-1": "house-1",
+        "college-student-2": "house-1"
+    }
+

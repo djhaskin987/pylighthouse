@@ -72,6 +72,38 @@ def test_standard_case(req):
                 second_node_dict
             ])
 
+def test_stateful():
+    '''
+    Test that the Nodes and Distributors are stateful
+    '''
+
+    parents = lighthouse.Node.from_list([{
+        "name": "parent",
+        "resources": {
+            "patience": 1
+        }
+    }])
+    a = lighthouse.Workload.from_dict({
+        "name": "kid-a",
+        "requirements": {
+            "patience": 1
+        }
+    })
+    b = lighthouse.Workload.from_dict({
+        "name": "kid-b",
+        "requirements": {
+            "patience": 1
+        }
+    })
+    pr = lighthouse.PrioritizedDistributor.from_list(parents)
+    result1 = pr.attempt_assign_loads([a])
+    assert result1 == {
+        "kid-a": "parent"
+    }
+    result2 = pr.attempt_assign_loads([b])
+    assert result2 == {
+        "kid-b": None
+    }
 
 def make_rdict(n):
     rdict = {}
