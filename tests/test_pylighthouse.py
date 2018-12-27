@@ -6,8 +6,6 @@ Tests for `pylighthouse` package.
 '''
 
 import pytest
-import math
-import pprint
 
 import pylighthouse.pylighthouse as lighthouse
 
@@ -329,13 +327,34 @@ def test_doc_placestrat_binpack(placestrat):
         "req-2": "node-3"
     }
 
+def test_ward():
+    '''
+    Infinite negative value wards things off
+    '''
+    nd = lighthouse.Node.from_dict({
+        "name": "oldhouse",
+        "resources": {
+            "room": 1,
+            "board": 1,
+            "spiders": -float("inf")
+            }
+        })
+    wk = lighthouse.Workload.from_dict({
+        "name": "boarder",
+        "requirements": {
+            "room": 1,
+            "board": 1
+        }
+    })
+    assert_bad(nd, wk)
+
 def test_immunity_basic():
     nd = lighthouse.Node.from_dict({
         "name": "oldhouse",
         "resources": {
             "room": 1,
             "board": 1,
-            "spiders": -math.inf
+            "spiders": -float("inf")
             }
         })
     wk = lighthouse.Workload.from_dict({
@@ -350,7 +369,33 @@ def test_immunity_basic():
     })
     assert_good(nd, wk)
 
-def test_shortcoming_basic():
+def test_immunity_rugsweep():
+    '''
+    Can I take more than I'm allowed if I declare immunity
+    '''
+    nd = lighthouse.Node.from_dict({
+        "name": "oldhouse",
+        "resources": {
+            "room": 1,
+            "board": 1,
+            }
+        })
+    wk = lighthouse.Workload.from_dict({
+        "name": "boarder",
+        "requirements": {
+            "room": 4,
+            "board": 1
+        },
+        "immunities": set([
+            "room"
+        ])
+    })
+    assert_good(nd, wk)
+
+def test_shortcoming_failure():
+    '''
+    Shortcoming offering fell short
+    '''
     nd = lighthouse.Node.from_dict({
         "name": "oldhouse",
         "resources": {
@@ -359,14 +404,12 @@ def test_shortcoming_basic():
             "spiders": -5
             }
         })
-    print("LOVE " + str(nd))
     wk = lighthouse.Workload.from_dict({
         "name": "boarder",
         "requirements": {
             "room": 1,
             "board": 1,
-            "spiders": -5
+            "spiders": -4
         }
     })
-    print("RAG " + str(wk))
-    assert_good(nd, wk)
+    assert_bad(nd, wk)

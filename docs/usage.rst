@@ -344,13 +344,11 @@ tolerance to the shortcoming.
 
 Second, we list a node up front at construction time with a ward::
 
-    import math
-
     nodes = lighthouse.Node.from_list([
         {
             "name": "node1",
             "resources": {
-               "spiders": -math.inf,
+               "spiders": -float("inf")
                #...
             }
         }
