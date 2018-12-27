@@ -94,17 +94,17 @@ def assert_bad(n, r, rdict):
     assert not n.attempt_attach(r)
     pr = lighthouse.PrioritizedDistributor.from_list([n])
 
-    assert = pr.attempt_assign_loads([r]) == {
+    assert pr.attempt_assign_loads([r]) == {
         r.name: None
     }
     rr = lighthouse.RoundRobinDistributor.from_list([n])
 
-    assert = rr.attempt_assign_loads([r]) == {
+    assert rr.attempt_assign_loads([r]) == {
         r.name: None
     }
     bp = lighthouse.BinPackDistributor.from_list(rdict, [n])
 
-    assert = pr.attempt_assign_loads([r]) == {
+    assert pr.attempt_assign_loads([r]) == {
         r.name: None
     }
 
@@ -155,9 +155,9 @@ def test_zilch_req():
             "mem": 10
         }
     })
-    r = lighthouse.Workload.from_dict(
+    r = lighthouse.Workload.from_dict({
         "name": "vacuous-req",
-        "resources": {}
+        "requirements": {}
         })
     assert_good(n, r, {
         "cpu": 1,

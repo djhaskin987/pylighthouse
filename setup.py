@@ -13,7 +13,7 @@ from setuptools import setup, find_packages
 with open(os.path.join(dir_path, 'README.rst')) as readme_file:
     readme = readme_file.read()
 
-with open(os.path.join(dir_path, 'CHANGELOG.rst')) as history_file:
+with open(os.path.join(dir_path, 'HISTORY.rst')) as history_file:
     history = history_file.read()
 
 requirements = [ ]

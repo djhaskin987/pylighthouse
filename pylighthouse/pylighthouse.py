@@ -5,12 +5,14 @@
 from sortedcontainers import SortedDict
 import math
 
+
 class LighthouseException(Exception):
     pass
 
+
 class Workload(object):
-    def __init__(self, name, requirements,
-            immunities=set(), aversion_groups=set()):
+    def __init__(self, name, requirements, immunities=set(),
+                 aversion_groups=set()):
         self.name = name
         self.requirements = requirements
         self.immunities = immunities
@@ -19,6 +21,9 @@ class Workload(object):
     def __eq__(self, other):
         return type(self) == type(other) and \
                 self.__dict__ == other.__dict__
+
+    def __str__(self):
+        return str(self.__dict__)
 
     @staticmethod
     def from_list(ds):
@@ -44,6 +49,7 @@ class Workload(object):
                         immunities,
                         aversion_groups)
 
+
 class Node(object):
     def __init__(self, name, resources, assigned_workloads={}):
         self.name = name
@@ -53,6 +59,9 @@ class Node(object):
     def __eq__(self, other):
         return type(self) == type(other) and \
                 self.__dict__ == other.__dict__
+
+    def __str__(self):
+        return str(self.__dict__)
 
     @staticmethod
     def from_list(ns):
@@ -67,7 +76,7 @@ class Node(object):
 
     def has_averse_loads(self, load):
         groups = load.aversion_groups
-        for w in self.assigned_workloads:
+        for nw, w in self.assigned_workloads.items():
             if len(groups.intersection(w.aversion_groups)) > 0:
                 return True
         return False
@@ -122,6 +131,7 @@ class Node(object):
     def add_ward(self, ward):
         self.resources[ward] = -math.inf
 
+
 class Distributor(object):
 
     def _attempt_placement(self, placer, load):
@@ -129,8 +139,8 @@ class Distributor(object):
 
     def _attempt_assign_load(self, load):
         attempts = [
-                lambda n,l: n.attempt_attach_amicable(l),
-                lambda n,l: n.attempt_attach(l)
+                lambda n, l: n.attempt_attach_amicable(l),
+                lambda n, l: n.attempt_attach(l)
             ]
         for attempt in attempts:
             n = self._attempt_placement(attempt, load)
@@ -144,6 +154,7 @@ class Distributor(object):
             results[l.name] = self._attempt_assign_load(l)
         return results
 
+
 class PrioritizedDistributor(Distributor):
     def __init__(self, nodes):
         self.nodes = nodes
@@ -153,11 +164,12 @@ class PrioritizedDistributor(Distributor):
         return PrioritizedDistributor(nodes)
 
     def _attempt_placement(self, placer, load):
-        for i in range(0,len(self.nodes)):
+        for i in range(0, len(self.nodes)):
             result = placer(self.nodes[i], load)
             if result:
                 return self.nodes[i]
         return None
+
 
 class RoundRobinDistributor(Distributor):
     def __init__(self, nodes):
@@ -171,16 +183,18 @@ class RoundRobinDistributor(Distributor):
     def _attempt_placement(self, placer, load):
         size = len(self.nodes)
         index = 0
-        for i in range(0,size):
+        for i in range(0, size):
             index = (i + self.next) % size
-            result = placer(self.nodes[index],load)
+            result = placer(self.nodes[index], load)
             if result:
                 self.next = (self.next + 1) % size
                 return self.nodes[index]
         return None
 
+
 class LighthouseRubricException(LighthouseException):
     pass
+
 
 class Rubric(object):
     def __init__(self, rubric):
@@ -202,10 +216,8 @@ class Rubric(object):
     # sort workloads biggest workload first
     def sort_workloads(self, loads):
         return sorted(loads,
-                key=(lambda l: self.score(l.requirements)),
-                reverse=True)
-
-
+                      key=(lambda l: self.score(l.requirements)),
+                      reverse=True)
 
 
 class BinPackDistributor(Distributor):
@@ -215,9 +227,9 @@ class BinPackDistributor(Distributor):
         self.scores = {}
         self.nodes = SortedDict({})
         for n in nodes:
-            score = self.rubric.score(n)
-            self.nodes[(score, n.name)] = n
-            self.scores[n.name] = score
+            sc = self.rubric.score(n.resources)
+            self.nodes[(sc, n.name)] = n
+            self.scores[n.name] = sc
 
     @staticmethod
     def from_list(rubric, nodes):
@@ -238,9 +250,9 @@ class BinPackDistributor(Distributor):
                 break
         if not (found_node is None):
             new_score = self.rubric.score(found_node.resources)
-            self.score[n.name] = new_score
-            del self.nodes[(found_name, found_old_score)]
-            self.nodes[(found_name, new_score)] = found_node
+            self.scores[found_name] = new_score
+            del self.nodes[(found_old_score, found_name)]
+            self.nodes[(new_score, found_name)] = found_node
             return found_node
         return None
 
@@ -250,8 +262,8 @@ class BinPackDistributor(Distributor):
             load_score = self.rubric.score(l.requirements)
             annotated_loads.append((load_score, l))
         annotated_loads = sorted(annotated_loads,
-                key=(lambda x: x[0]),
-                reverse=True)
+                                 key=(lambda x: x[0]),
+                                 reverse=True)
         results = {}
         for l in annotated_loads:
             results[l[1].name] = self._attempt_assign_load(l)
