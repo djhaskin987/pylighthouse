@@ -106,7 +106,7 @@ class Node(object):
         have_keys = set(self.resources.keys())
         need_keys = set(load.requirements.keys())
         present_keys = have_keys.union(need_keys)
-
+        
         # Check that requirements are a subset of resources
         if len(present_keys) > len(have_keys):
             return False
